@@ -1,6 +1,6 @@
-# A-Tunnel (Architecture-First MVP)
+# AgentLink (Architecture-First MVP)
 
-A-Tunnel is an **agent-native, remote-zero-install** gateway: local agent UX stays unchanged, remote host only needs `sshd`.
+AgentLink is an **agent-native, remote-zero-install** gateway: local agent UX stays unchanged, remote host only needs `sshd`.
 
 ## Design Principles
 
@@ -59,8 +59,8 @@ src/
 
 ```bash
 cargo run -- doctor
-cargo run -- bind --target user@your-vps --agent codex
-cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
+cargo run -- bind --target user@your-vps --agent codex --transport ssh-cli
+cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --transport ssh-cli --clean
 ```
 
 ## What Is Already Platform-Aware
@@ -75,3 +75,4 @@ cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
 2. add `portable-pty` adapter under `transport/pty_*`
 3. add SFTP cache adapter under `transport/sftp_*`
 4. keep `app/interface/core` unchanged during backend upgrades
+5. transport switch available now: `--transport ssh-cli|russh` (`russh` scaffold is wired, implementation pending)

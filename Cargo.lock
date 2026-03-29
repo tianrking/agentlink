@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "a-tunnel"
+name = "agentlink"
 version = "0.1.0"
 dependencies = [
  "anyhow",

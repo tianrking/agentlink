@@ -1,8 +1,8 @@
-# A-Tunnel PRD（架构优先版）
+# AgentLink PRD（架构优先版）
 
 ## 1. 产品目标
 
-A-Tunnel 让本地 Agent 直接操作远端服务器，同时保持：
+AgentLink 让本地 Agent 直接操作远端服务器，同时保持：
 
 - 本地使用体验不变
 - 远端零安装（仅 `sshd`）

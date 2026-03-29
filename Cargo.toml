@@ -1,9 +1,10 @@
 [package]
-name = "a-tunnel"
+name = "agentlink"
 version = "0.1.0"
 edition = "2024"
-description = "Agent-native SSH tunnel MVP"
+description = "Agent-native SSH tunnel gateway"
 license = "MIT"
+repository = "https://github.com/tianrking/agentlink"
 
 [dependencies]
 anyhow = "1.0"
@@ -14,3 +15,14 @@ serde = { version = "1.0", features = ["derive"] }
 postcard = { version = "1.1", features = ["alloc"] }
 strip-ansi-escapes = "0.2"
 tokio = { version = "1.44", features = ["macros", "rt-multi-thread", "process", "io-util", "io-std", "net", "sync"] }
+
+[package.metadata.deb]
+maintainer = "tianrking <tian.r.king@gmail.com>"
+depends = "$auto"
+section = "utils"
+priority = "optional"
+assets = [
+  ["target/release/agentlink", "usr/bin/", "755"],
+  ["README.md", "usr/share/doc/agentlink/README.md", "644"],
+]
+extended-description = "AgentLink is an agent-native SSH tunnel gateway for zero-install remote operation."

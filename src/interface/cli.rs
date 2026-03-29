@@ -1,9 +1,10 @@
 use crate::core::agent::AgentKind;
+use crate::transport::TransportKind;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
-#[command(name = "a-tunnel", about = "Agent-native SSH tunnel (MVP)", version)]
+#[command(name = "agentlink", about = "Agent-native SSH tunnel gateway", version)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -22,6 +23,8 @@ pub enum Commands {
         target: String,
         #[arg(long, value_enum, default_value = "generic")]
         agent: AgentKind,
+        #[arg(long, value_enum, default_value = "ssh-cli")]
+        transport: TransportKind,
         #[arg(long, default_value = "ssh")]
         ssh_bin: String,
         /// Extra raw args passed to ssh, e.g. --extra-ssh-args "-p" --extra-ssh-args "2222"
@@ -39,6 +42,8 @@ pub enum Commands {
         cmd: String,
         #[arg(long, value_enum, default_value = "generic")]
         agent: AgentKind,
+        #[arg(long, value_enum, default_value = "ssh-cli")]
+        transport: TransportKind,
         #[arg(long, default_value = "ssh")]
         ssh_bin: String,
         /// Enable semantic cleaning pipeline.

@@ -98,7 +98,7 @@ impl RemoteTransport for SshCliTransport {
             let _ = io::stderr()
                 .write_all(
                     format!(
-                        "[a-tunnel] command failed on {} (profile: {})\n",
+                        "[agentlink] command failed on {} (profile: {})\n",
                         self.config.target,
                         self.profile.name()
                     )

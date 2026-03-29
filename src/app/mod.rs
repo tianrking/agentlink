@@ -4,7 +4,7 @@ use crate::core::control::guard;
 use crate::core::ports::TransportConfig;
 use crate::interface::cli::{Cli, Commands};
 use crate::platform::{health, runtime};
-use crate::transport::{self, TransportKind};
+use crate::transport::{self};
 use anyhow::Result;
 
 pub async fn run(cli: Cli) -> Result<i32> {
@@ -12,7 +12,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
         Commands::Doctor { ssh_bin } => {
             health::check_ssh_binary(&ssh_bin).await?;
             println!(
-                "a-tunnel doctor: ssh binary is available ({ssh_bin}), platform={:?}",
+                "agentlink doctor: ssh binary is available ({ssh_bin}), platform={:?}",
                 runtime::detect_platform()
             );
             Ok(0)
@@ -20,6 +20,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
         Commands::Bind {
             target,
             agent,
+            transport,
             ssh_bin,
             extra_ssh_args,
             status_socket,
@@ -31,13 +32,14 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 ssh_bin,
                 extra_ssh_args,
             };
-            let transport = transport::build_transport(TransportKind::SshCli, config, profile);
+            let transport = transport::build_transport(transport, config, profile);
             handle_result(transport.bind_interactive().await, &mut emitter).await
         }
         Commands::Exec {
             target,
             cmd,
             agent,
+            transport,
             ssh_bin,
             clean,
             allow_high_risk,
@@ -55,7 +57,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 ssh_bin,
                 extra_ssh_args,
             };
-            let transport = transport::build_transport(TransportKind::SshCli, config, profile);
+            let transport = transport::build_transport(transport, config, profile);
             handle_result(transport.exec_command(&cmd, clean).await, &mut emitter).await
         }
     }

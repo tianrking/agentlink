@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    name: build-${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macos-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+          - label: linux-x64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - label: linux-x86
+            os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+          - label: windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install Linux x86 toolchain
+        if: matrix.target == 'i686-unknown-linux-gnu'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib libc6-dev-i386
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Archive artifact (unix)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentlink-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/agentlink
+          if-no-files-found: error
+
+      - name: Archive artifact (windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentlink-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/agentlink.exe
+          if-no-files-found: error
+
+  package-ubuntu:
+    name: package-ubuntu-deb-appimage
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev desktop-file-utils fuse libfuse2
+
+      - name: Install cargo-deb and cargo-appimage
+        run: |
+          cargo install cargo-deb --locked
+          cargo install cargo-appimage --locked
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Build .deb
+        run: cargo deb --no-build --output target/debian/agentlink.deb
+
+      - name: Build AppImage
+        run: cargo appimage
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentlink-ubuntu-deb
+          path: target/debian/agentlink.deb
+          if-no-files-found: error
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentlink-ubuntu-appimage
+          path: target/appimage/*.AppImage
+          if-no-files-found: error

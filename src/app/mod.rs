@@ -31,6 +31,8 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 target,
                 ssh_bin,
                 extra_ssh_args,
+                ssh_reuse: false,
+                ssh_control_persist_secs: 0,
             };
             let transport = transport::build_transport(transport, config, profile);
             handle_result(transport.bind_interactive().await, &mut emitter).await
@@ -43,6 +45,8 @@ pub async fn run(cli: Cli) -> Result<i32> {
             ssh_bin,
             clean,
             allow_high_risk,
+            no_ssh_reuse,
+            ssh_control_persist_secs,
             extra_ssh_args,
             status_socket,
         } => {
@@ -56,6 +60,8 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 target,
                 ssh_bin,
                 extra_ssh_args,
+                ssh_reuse: !no_ssh_reuse,
+                ssh_control_persist_secs,
             };
             let transport = transport::build_transport(transport, config, profile);
             handle_result(transport.exec_command(&cmd, clean).await, &mut emitter).await

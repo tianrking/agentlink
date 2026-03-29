@@ -52,6 +52,12 @@ pub enum Commands {
         /// Allow high-risk commands (rm -rf, DROP DATABASE, etc.)
         #[arg(long, default_value_t = false)]
         allow_high_risk: bool,
+        /// Disable SSH connection reuse for one-shot exec.
+        #[arg(long, default_value_t = false)]
+        no_ssh_reuse: bool,
+        /// SSH control socket keep-alive time in seconds for exec reuse.
+        #[arg(long, default_value_t = 600)]
+        ssh_control_persist_secs: u32,
         #[arg(long = "extra-ssh-args")]
         extra_ssh_args: Vec<String>,
         #[arg(long)]

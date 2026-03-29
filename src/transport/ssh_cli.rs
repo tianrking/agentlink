@@ -25,6 +25,38 @@ impl SshCliTransport {
         cmd.arg(&self.config.target);
         cmd
     }
+
+    fn supports_reuse(&self) -> bool {
+        self.config.ssh_reuse
+            && !self.has_custom_ssh_option("ControlMaster")
+            && !self.has_custom_ssh_option("ControlPath")
+            && !self.has_custom_ssh_option("ControlPersist")
+            && !self.config.extra_ssh_args.iter().any(|arg| arg == "-S")
+    }
+
+    fn has_custom_ssh_option(&self, key: &str) -> bool {
+        self.config.extra_ssh_args.iter().any(|arg| {
+            arg == key || arg.starts_with(&format!("{key}=")) || arg.contains(&format!("{key}="))
+        })
+    }
+
+    fn control_path_template() -> &'static str {
+        "/tmp/agentlink-%C"
+    }
+
+    fn apply_exec_connection_reuse(&self, cmd: &mut Command) {
+        if !self.supports_reuse() {
+            return;
+        }
+
+        cmd.arg("-o").arg("ControlMaster=auto");
+        cmd.arg("-o").arg(format!(
+            "ControlPersist={}s",
+            self.config.ssh_control_persist_secs
+        ));
+        cmd.arg("-o")
+            .arg(format!("ControlPath={}", Self::control_path_template()));
+    }
 }
 
 #[async_trait]
@@ -68,6 +100,7 @@ impl RemoteTransport for SshCliTransport {
 
     async fn exec_command(&self, remote_cmd: &str, clean: bool) -> Result<Option<i32>> {
         let mut cmd = self.base_command();
+        self.apply_exec_connection_reuse(&mut cmd);
         cmd.arg(remote_cmd);
         cmd.stdin(std::process::Stdio::null());
         cmd.stdout(std::process::Stdio::piped());

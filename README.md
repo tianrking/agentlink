@@ -63,6 +63,9 @@ cargo run -- bind --target user@your-vps --agent codex --transport ssh-cli
 cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --transport ssh-cli --clean
 ```
 
+`exec` now enables SSH connection reuse by default (ControlMaster/ControlPersist).  
+Disable with `--no-ssh-reuse` when needed.
+
 ## What Is Already Platform-Aware
 
 - host platform detection (`MacOs/Linux/Windows/Unknown`)

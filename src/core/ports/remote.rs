@@ -6,6 +6,8 @@ pub struct TransportConfig {
     pub target: String,
     pub ssh_bin: String,
     pub extra_ssh_args: Vec<String>,
+    pub ssh_reuse: bool,
+    pub ssh_control_persist_secs: u32,
 }
 
 #[async_trait]

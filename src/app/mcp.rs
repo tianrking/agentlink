@@ -5,7 +5,7 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[derive(Debug, Clone)]
 struct SessionState {
@@ -453,6 +453,8 @@ fn exec_over_ssh(
 fn ensure_sshpass_available() -> Result<()> {
     let status = Command::new("sshpass")
         .arg("-V")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .context("failed to start sshpass; install sshpass for password MCP mode")?;
     if !status.success() {

@@ -21,9 +21,21 @@ impl SshCliTransport {
         let mut cmd = Command::new(&self.config.ssh_bin);
         cmd.env("TERM", runtime::default_term_type());
         cmd.args(self.profile.transport_ssh_args());
+        self.apply_default_ssh_options(&mut cmd);
         cmd.args(&self.config.extra_ssh_args);
         cmd.arg(&self.config.target);
         cmd
+    }
+
+    fn apply_default_ssh_options(&self, cmd: &mut Command) {
+        // Keep default usage close to plain ssh while avoiding first-connection
+        // host-key prompts that block agent workflows.
+        if !self.has_custom_ssh_option("StrictHostKeyChecking") {
+            cmd.arg("-o").arg("StrictHostKeyChecking=accept-new");
+        }
+        if !self.has_custom_ssh_option("ConnectTimeout") {
+            cmd.arg("-o").arg("ConnectTimeout=10");
+        }
     }
 
     fn supports_reuse(&self) -> bool {

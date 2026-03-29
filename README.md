@@ -59,12 +59,13 @@ src/
 
 ```bash
 cargo run -- doctor
-cargo run -- bind --target user@your-vps --agent codex --transport ssh-cli
-cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --transport ssh-cli --clean
+cargo run -- bind --target user@your-vps --agent codex
+cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
 ```
 
 `exec` now enables SSH connection reuse by default (ControlMaster/ControlPersist).  
 Disable with `--no-ssh-reuse` when needed.
+`ssh-cli` is already the default transport, so `--transport` is optional.
 
 ## What Is Already Platform-Aware
 

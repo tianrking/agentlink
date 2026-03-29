@@ -83,6 +83,27 @@ pub enum Commands {
         #[arg(long = "extra-ssh-args")]
         extra_ssh_args: Vec<String>,
     },
+    /// Print non-intrusive MCP wiring snippets for local agent UIs.
+    Connect {
+        #[arg(long)]
+        target: String,
+        #[arg(long, value_enum, default_value = "codex")]
+        agent: AgentKind,
+        /// MCP server name shown in local agent.
+        #[arg(long, default_value = "agentlink")]
+        name: String,
+        #[arg(long, default_value = "ssh")]
+        ssh_bin: String,
+        #[arg(long, default_value_t = false)]
+        no_ssh_reuse: bool,
+        #[arg(long, default_value_t = 600)]
+        ssh_control_persist_secs: u32,
+        /// Read SSH password from this environment variable.
+        #[arg(long, default_value = "AGENTLINK_SSH_PASSWORD")]
+        password_env: String,
+        #[arg(long = "extra-ssh-args")]
+        extra_ssh_args: Vec<String>,
+    },
     /// Launch local Codex UI with remote AgentLink backend wired automatically.
     Codex {
         #[arg(long)]

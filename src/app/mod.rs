@@ -1,5 +1,6 @@
 mod launch;
 mod mcp;
+mod connect;
 
 use crate::core::agent::AgentProfile;
 use crate::core::control::emitter::{Event, StatusEmitter};
@@ -9,6 +10,7 @@ use crate::interface::cli::{Cli, Commands};
 use crate::platform::{health, runtime};
 use crate::transport::ssh_cli::SshCliTransport;
 use anyhow::Result;
+use connect::{ConnectGuide, print_connect_guide};
 use launch::{CodexLaunchConfig, launch_codex};
 
 pub async fn run(cli: Cli) -> Result<i32> {
@@ -116,6 +118,28 @@ pub async fn run(cli: Cli) -> Result<i32> {
             extra_ssh_args,
             prompt,
         }),
+        Commands::Connect {
+            target,
+            agent,
+            name,
+            ssh_bin,
+            no_ssh_reuse,
+            ssh_control_persist_secs,
+            password_env,
+            extra_ssh_args,
+        } => {
+            print_connect_guide(ConnectGuide {
+                target,
+                agent,
+                name,
+                ssh_bin,
+                no_ssh_reuse,
+                ssh_control_persist_secs,
+                password_env,
+                extra_ssh_args,
+            })?;
+            Ok(0)
+        }
     }
 }
 

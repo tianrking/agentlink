@@ -61,13 +61,14 @@ src/
 cargo run -- doctor
 cargo run -- bind --target user@your-vps --agent codex
 cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
-cargo run -- codex --target user@your-vps
+cargo run -- mcp-server --target user@your-vps --agent codex
+cargo run -- connect --target user@your-vps --agent codex --name agentlink-vps
 ```
 
 `exec` now enables SSH connection reuse by default (ControlMaster/ControlPersist).  
 Disable with `--no-ssh-reuse` when needed.
 
-## Agent UI Integration (MCP)
+## Agent UI Integration (MCP, Non-Intrusive First)
 
 Run AgentLink as an MCP stdio server:
 
@@ -91,6 +92,12 @@ codex mcp add agentlink -- \
   /absolute/path/to/agentlink mcp-server --target user@your-vps --agent codex
 ```
 
+Generate wiring snippets (Codex command + generic MCP JSON for Claude Code/other agents):
+
+```bash
+cargo run -- connect --target user@your-vps --agent codex --name agentlink-vps
+```
+
 Password mode is also supported for MCP:
 
 ```bash
@@ -110,21 +117,9 @@ Notes:
 - Password MCP mode requires `sshpass` on the local machine.
 - Key-based auth still works and remains the recommended default.
 
-## Zero-Manual Codex Mode
+## Optional Convenience Mode
 
-If your goal is \"just open Codex UI and operate VPS\", use:
-
-```bash
-cargo run -- codex --target user@your-vps
-```
-
-With password:
-
-```bash
-cargo run -- codex --target user@your-vps --password 'your_password'
-```
-
-This command auto-registers AgentLink MCP into Codex, launches Codex, and cleans up on exit.
+`agentlink codex` is still available as a convenience wrapper, but production usage is recommended via the non-intrusive MCP path above.
 
 ## What Is Already Platform-Aware
 

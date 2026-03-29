@@ -9,6 +9,17 @@ pub enum AgentKind {
     Generic,
 }
 
+impl AgentKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AgentKind::Codex => "codex",
+            AgentKind::Claudecode => "claudecode",
+            AgentKind::Aider => "aider",
+            AgentKind::Generic => "generic",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct AgentProfile {
     kind: AgentKind,
@@ -20,12 +31,7 @@ impl AgentProfile {
     }
 
     pub fn name(&self) -> &'static str {
-        match self.kind {
-            AgentKind::Codex => "codex",
-            AgentKind::Claudecode => "claudecode",
-            AgentKind::Aider => "aider",
-            AgentKind::Generic => "generic",
-        }
+        self.kind.as_str()
     }
 
     pub fn cleaner_config(&self, clean: bool) -> CleanerConfig {

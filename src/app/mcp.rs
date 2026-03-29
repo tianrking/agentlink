@@ -3,6 +3,7 @@ use crate::core::ports::TransportConfig;
 use anyhow::{Context, Result};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
@@ -55,6 +56,9 @@ pub fn run_stdio_server(config: TransportConfig, profile: AgentProfile) -> Resul
             "initialize" => initialize_response(id),
             "tools/list" => tools_list_response(id),
             "tools/call" => handle_tools_call(id, &msg, &config, &profile, &mut state),
+            "resources/list" => resources_list_response(id, &state),
+            "resources/templates/list" => resources_templates_list_response(id),
+            "resources/read" => handle_resources_read(id, &msg, &config, &profile, &mut state),
             _ => method_not_found(id, method),
         };
 
@@ -70,13 +74,150 @@ fn initialize_response(id: Value) -> Value {
         "id": id,
         "result": {
             "protocolVersion": "2024-11-05",
-            "capabilities": { "tools": {} },
+            "capabilities": {
+                "tools": {},
+                "resources": {}
+            },
             "serverInfo": {
                 "name": "agentlink-mcp",
                 "version": env!("CARGO_PKG_VERSION")
             }
         }
     })
+}
+
+fn resources_list_response(id: Value, state: &SessionState) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {
+            "resources": [
+                {
+                    "uri": "agentlink://pwd",
+                    "name": "Remote Working Directory",
+                    "description": "Current remote cwd for this MCP session",
+                    "mimeType": "text/plain",
+                    "text": state.cwd
+                }
+            ]
+        }
+    })
+}
+
+fn resources_templates_list_response(id: Value) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {
+            "resourceTemplates": [
+                {
+                    "uriTemplate": "agentlink://exec/{cmd_b64url}",
+                    "name": "Remote Exec",
+                    "description": "Execute remote shell command in current cwd; cmd_b64url is URL-safe base64 of UTF-8 command",
+                    "mimeType": "text/plain"
+                },
+                {
+                    "uriTemplate": "agentlink://cd/{path_b64url}",
+                    "name": "Remote Cd",
+                    "description": "Change remote cwd; path_b64url is URL-safe base64 of UTF-8 path",
+                    "mimeType": "text/plain"
+                },
+                {
+                    "uriTemplate": "agentlink://list_dir/{path_b64url}",
+                    "name": "Remote List Dir",
+                    "description": "List remote directory; path_b64url is URL-safe base64 of UTF-8 path",
+                    "mimeType": "text/plain"
+                },
+                {
+                    "uriTemplate": "agentlink://read_file/{path_b64url}",
+                    "name": "Remote Read File",
+                    "description": "Read remote UTF-8 file; path_b64url is URL-safe base64 of UTF-8 path",
+                    "mimeType": "text/plain"
+                }
+            ]
+        }
+    })
+}
+
+fn handle_resources_read(
+    id: Value,
+    msg: &Value,
+    config: &TransportConfig,
+    profile: &AgentProfile,
+    state: &mut SessionState,
+) -> Value {
+    let Some(uri) = msg.pointer("/params/uri").and_then(Value::as_str) else {
+        return invalid_args(id, "missing required parameter: params.uri");
+    };
+
+    let result = if uri == "agentlink://pwd" {
+        Ok((0, state.cwd.clone(), String::new()))
+    } else if let Some(v) = uri.strip_prefix("agentlink://exec/") {
+        match decode_b64url(v) {
+            Ok(cmd) => remote_exec(config, profile, state, &cmd),
+            Err(err) => Err(err),
+        }
+    } else if let Some(v) = uri.strip_prefix("agentlink://cd/") {
+        match decode_b64url(v) {
+            Ok(path) => remote_cd(config, profile, state, &path),
+            Err(err) => Err(err),
+        }
+    } else if let Some(v) = uri.strip_prefix("agentlink://list_dir/") {
+        match decode_b64url(v) {
+            Ok(path) => remote_list_dir(config, profile, state, &path),
+            Err(err) => Err(err),
+        }
+    } else if let Some(v) = uri.strip_prefix("agentlink://read_file/") {
+        match decode_b64url(v) {
+            Ok(path) => remote_read_file(config, profile, state, &path),
+            Err(err) => Err(err),
+        }
+    } else {
+        Err(anyhow::anyhow!("unsupported resource uri: {uri}"))
+    };
+
+    match result {
+        Ok((code, out, err)) => {
+            let mut text = String::new();
+            if !out.trim().is_empty() {
+                text.push_str("stdout:\n");
+                text.push_str(&out);
+                if !out.ends_with('\n') {
+                    text.push('\n');
+                }
+            }
+            if !err.trim().is_empty() {
+                text.push_str("stderr:\n");
+                text.push_str(&err);
+                if !err.ends_with('\n') {
+                    text.push('\n');
+                }
+            }
+            text.push_str(&format!("exit_code: {code}\n"));
+
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": {
+                    "contents": [
+                        {
+                            "uri": uri,
+                            "mimeType": "text/plain",
+                            "text": text
+                        }
+                    ]
+                }
+            })
+        }
+        Err(err) => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {
+                "code": -32000,
+                "message": format!("resource read failed: {err}")
+            }
+        }),
+    }
 }
 
 fn tools_list_response(id: Value) -> Value {
@@ -474,6 +615,13 @@ fn has_ssh_opt(extra_ssh_args: &[String], key: &str) -> bool {
     extra_ssh_args.iter().any(|arg| {
         arg == key || arg.starts_with(&format!("{key}=")) || arg.contains(&format!("{key}="))
     })
+}
+
+fn decode_b64url(input: &str) -> Result<String> {
+    let bytes = URL_SAFE_NO_PAD
+        .decode(input)
+        .context("invalid base64url segment in resource uri")?;
+    Ok(String::from_utf8(bytes).context("decoded value is not valid UTF-8")?)
 }
 
 fn read_message(reader: &mut dyn BufRead) -> Result<Option<String>> {

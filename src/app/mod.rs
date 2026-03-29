@@ -34,6 +34,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 extra_ssh_args,
                 ssh_reuse: false,
                 ssh_control_persist_secs: 0,
+                ssh_password: None,
             };
             let transport = SshCliTransport::new(config, profile);
             handle_result(transport.bind_interactive().await, &mut emitter).await
@@ -62,6 +63,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 extra_ssh_args,
                 ssh_reuse: !no_ssh_reuse,
                 ssh_control_persist_secs,
+                ssh_password: None,
             };
             let transport = SshCliTransport::new(config, profile);
             handle_result(transport.exec_command(&cmd, clean).await, &mut emitter).await
@@ -72,8 +74,15 @@ pub async fn run(cli: Cli) -> Result<i32> {
             ssh_bin,
             no_ssh_reuse,
             ssh_control_persist_secs,
+            password,
+            password_env,
             extra_ssh_args,
         } => {
+            let resolved_password = match password {
+                Some(p) => Some(p),
+                None => std::env::var(&password_env).ok(),
+            };
+
             let profile = AgentProfile::new(agent);
             let config = TransportConfig {
                 target,
@@ -81,6 +90,7 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 extra_ssh_args,
                 ssh_reuse: !no_ssh_reuse,
                 ssh_control_persist_secs,
+                ssh_password: resolved_password,
             };
             mcp::run_stdio_server(config, profile)?;
             Ok(0)

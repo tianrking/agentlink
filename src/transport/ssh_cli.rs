@@ -40,6 +40,7 @@ impl SshCliTransport {
 
     fn supports_reuse(&self) -> bool {
         self.config.ssh_reuse
+            && self.config.ssh_password.is_none()
             && !self.has_custom_ssh_option("ControlMaster")
             && !self.has_custom_ssh_option("ControlPath")
             && !self.has_custom_ssh_option("ControlPersist")

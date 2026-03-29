@@ -21,6 +21,10 @@ impl Default for SessionState {
 }
 
 pub fn run_stdio_server(config: TransportConfig, profile: AgentProfile) -> Result<()> {
+    if config.ssh_password.is_some() {
+        ensure_sshpass_available()?;
+    }
+
     let stdin = io::stdin();
     let mut reader = BufReader::new(stdin.lock());
     let stdout = io::stdout();
@@ -385,7 +389,15 @@ fn exec_over_ssh(
     profile: &AgentProfile,
     remote_cmd: &str,
 ) -> Result<(i32, String, String)> {
-    let mut cmd = Command::new(&config.ssh_bin);
+    let mut cmd = if let Some(password) = &config.ssh_password {
+        let mut c = Command::new("sshpass");
+        c.arg("-e");
+        c.arg(&config.ssh_bin);
+        c.env("SSHPASS", password);
+        c
+    } else {
+        Command::new(&config.ssh_bin)
+    };
 
     cmd.args(profile.transport_ssh_args());
     if !has_ssh_opt(&config.extra_ssh_args, "StrictHostKeyChecking") {
@@ -394,8 +406,19 @@ fn exec_over_ssh(
     if !has_ssh_opt(&config.extra_ssh_args, "ConnectTimeout") {
         cmd.arg("-o").arg("ConnectTimeout=10");
     }
-    if !has_ssh_opt(&config.extra_ssh_args, "BatchMode") {
+    if config.ssh_password.is_none() && !has_ssh_opt(&config.extra_ssh_args, "BatchMode") {
         cmd.arg("-o").arg("BatchMode=yes");
+    }
+    if config.ssh_password.is_some() {
+        if !has_ssh_opt(&config.extra_ssh_args, "PreferredAuthentications") {
+            cmd.arg("-o").arg("PreferredAuthentications=password");
+        }
+        if !has_ssh_opt(&config.extra_ssh_args, "PubkeyAuthentication") {
+            cmd.arg("-o").arg("PubkeyAuthentication=no");
+        }
+        if !has_ssh_opt(&config.extra_ssh_args, "KbdInteractiveAuthentication") {
+            cmd.arg("-o").arg("KbdInteractiveAuthentication=no");
+        }
     }
 
     if config.ssh_reuse
@@ -425,6 +448,17 @@ fn exec_over_ssh(
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     Ok((code, stdout, stderr))
+}
+
+fn ensure_sshpass_available() -> Result<()> {
+    let status = Command::new("sshpass")
+        .arg("-V")
+        .status()
+        .context("failed to start sshpass; install sshpass for password MCP mode")?;
+    if !status.success() {
+        anyhow::bail!("sshpass is required for password-based MCP mode");
+    }
+    Ok(())
 }
 
 fn shell_quote(text: &str) -> String {

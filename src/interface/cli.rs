@@ -70,6 +70,16 @@ pub enum Commands {
         no_ssh_reuse: bool,
         #[arg(long, default_value_t = 600)]
         ssh_control_persist_secs: u32,
+        /// Direct SSH password for MCP mode (insecure in shell history).
+        #[arg(long, conflicts_with = "password_env")]
+        password: Option<String>,
+        /// Read SSH password from this environment variable (default: AGENTLINK_SSH_PASSWORD).
+        #[arg(
+            long,
+            default_value = "AGENTLINK_SSH_PASSWORD",
+            conflicts_with = "password"
+        )]
+        password_env: String,
         #[arg(long = "extra-ssh-args")]
         extra_ssh_args: Vec<String>,
     },

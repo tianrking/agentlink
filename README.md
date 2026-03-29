@@ -90,7 +90,24 @@ codex mcp add agentlink -- \
   /absolute/path/to/agentlink mcp-server --target user@your-vps --agent codex
 ```
 
-Note: MCP mode is designed for key-based SSH auth. It enables `BatchMode=yes` by default to avoid password prompts breaking stdio protocol.
+Password mode is also supported for MCP:
+
+```bash
+export AGENTLINK_SSH_PASSWORD='your_password'
+codex mcp add agentlink -- \
+  /absolute/path/to/agentlink mcp-server --target user@your-vps --agent codex
+```
+
+Or pass directly:
+
+```bash
+codex mcp add agentlink -- \
+  /absolute/path/to/agentlink mcp-server --target user@your-vps --agent codex --password 'your_password'
+```
+
+Notes:
+- Password MCP mode requires `sshpass` on the local machine.
+- Key-based auth still works and remains the recommended default.
 
 ## What Is Already Platform-Aware
 

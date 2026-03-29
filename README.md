@@ -61,6 +61,7 @@ src/
 cargo run -- doctor
 cargo run -- bind --target user@your-vps --agent codex
 cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
+cargo run -- codex --target user@your-vps
 ```
 
 `exec` now enables SSH connection reuse by default (ControlMaster/ControlPersist).  
@@ -108,6 +109,22 @@ codex mcp add agentlink -- \
 Notes:
 - Password MCP mode requires `sshpass` on the local machine.
 - Key-based auth still works and remains the recommended default.
+
+## Zero-Manual Codex Mode
+
+If your goal is \"just open Codex UI and operate VPS\", use:
+
+```bash
+cargo run -- codex --target user@your-vps
+```
+
+With password:
+
+```bash
+cargo run -- codex --target user@your-vps --password 'your_password'
+```
+
+This command auto-registers AgentLink MCP into Codex, launches Codex, and cleans up on exit.
 
 ## What Is Already Platform-Aware
 

@@ -1,3 +1,4 @@
+mod launch;
 mod mcp;
 
 use crate::core::agent::AgentProfile;
@@ -8,6 +9,7 @@ use crate::interface::cli::{Cli, Commands};
 use crate::platform::{health, runtime};
 use crate::transport::ssh_cli::SshCliTransport;
 use anyhow::Result;
+use launch::{CodexLaunchConfig, launch_codex};
 
 pub async fn run(cli: Cli) -> Result<i32> {
     match cli.command {
@@ -95,6 +97,25 @@ pub async fn run(cli: Cli) -> Result<i32> {
             mcp::run_stdio_server(config, profile)?;
             Ok(0)
         }
+        Commands::Codex {
+            target,
+            ssh_bin,
+            no_ssh_reuse,
+            ssh_control_persist_secs,
+            password,
+            password_env,
+            extra_ssh_args,
+            prompt,
+        } => launch_codex(CodexLaunchConfig {
+            target,
+            ssh_bin,
+            no_ssh_reuse,
+            ssh_control_persist_secs,
+            password,
+            password_env,
+            extra_ssh_args,
+            prompt,
+        }),
     }
 }
 

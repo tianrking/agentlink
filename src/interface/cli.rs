@@ -83,4 +83,30 @@ pub enum Commands {
         #[arg(long = "extra-ssh-args")]
         extra_ssh_args: Vec<String>,
     },
+    /// Launch local Codex UI with remote AgentLink backend wired automatically.
+    Codex {
+        #[arg(long)]
+        target: String,
+        #[arg(long, default_value = "ssh")]
+        ssh_bin: String,
+        #[arg(long, default_value_t = false)]
+        no_ssh_reuse: bool,
+        #[arg(long, default_value_t = 600)]
+        ssh_control_persist_secs: u32,
+        /// Direct SSH password (optional; prefers password-env for safety).
+        #[arg(long, conflicts_with = "password_env")]
+        password: Option<String>,
+        /// Environment variable containing SSH password.
+        #[arg(
+            long,
+            default_value = "AGENTLINK_SSH_PASSWORD",
+            conflicts_with = "password"
+        )]
+        password_env: String,
+        #[arg(long = "extra-ssh-args")]
+        extra_ssh_args: Vec<String>,
+        /// Optional initial prompt passed to Codex.
+        #[arg(long)]
+        prompt: Option<String>,
+    },
 }

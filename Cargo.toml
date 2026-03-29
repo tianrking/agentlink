@@ -9,9 +9,11 @@ repository = "https://github.com/tianrking/agentlink"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
+base64 = "0.22"
 clap = { version = "4.5", features = ["derive"] }
 regex = "1.11"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 postcard = { version = "1.1", features = ["alloc"] }
 strip-ansi-escapes = "0.2"
 tokio = { version = "1.44", features = ["macros", "rt-multi-thread", "process", "io-util", "io-std", "net", "sync"] }

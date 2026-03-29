@@ -52,7 +52,7 @@ src/
 
 - `app` depends on traits (`core::ports`), never on concrete backend internals.
 - `core` has no dependency on transport implementation details.
-- `transport/*` can be swapped (`ssh_cli` -> `russh`) without changing `core`.
+- `transport/*` is isolated; current production path is `ssh_cli`.
 - `platform/*` is the only place for OS/runtime-specific branching.
 
 ## Commands
@@ -65,7 +65,32 @@ cargo run -- exec --target user@your-vps --cmd "ls -la" --agent codex --clean
 
 `exec` now enables SSH connection reuse by default (ControlMaster/ControlPersist).  
 Disable with `--no-ssh-reuse` when needed.
-`ssh-cli` is already the default transport, so `--transport` is optional.
+
+## Agent UI Integration (MCP)
+
+Run AgentLink as an MCP stdio server:
+
+```bash
+cargo run -- mcp-server --target user@your-vps --agent codex
+```
+
+It exposes one tool:
+- `remote_exec` command execution in remote cwd
+- `remote_pwd` get remote cwd
+- `remote_cd` change remote cwd
+- `remote_list_dir` list remote directory
+- `remote_read_file` read remote UTF-8 file
+- `remote_write_file` write/append remote UTF-8 file
+- `remote_mkdir` create remote directory
+
+Register it in Codex:
+
+```bash
+codex mcp add agentlink -- \
+  /absolute/path/to/agentlink mcp-server --target user@your-vps --agent codex
+```
+
+Note: MCP mode is designed for key-based SSH auth. It enables `BatchMode=yes` by default to avoid password prompts breaking stdio protocol.
 
 ## What Is Already Platform-Aware
 
@@ -75,8 +100,7 @@ Disable with `--no-ssh-reuse` when needed.
 
 ## Next Evolution
 
-1. add `russh` backend implementing `RemoteTransport`
-2. add `portable-pty` adapter under `transport/pty_*`
-3. add SFTP cache adapter under `transport/sftp_*`
-4. keep `app/interface/core` unchanged during backend upgrades
-5. transport switch available now: `--transport ssh-cli|russh` (`russh` scaffold is wired, implementation pending)
+1. extend MCP with remote search + structured patch application
+2. add remote session state snapshots and recovery
+3. add HITL risk-release gate for destructive commands
+4. add binary-safe file transfer tool for large assets

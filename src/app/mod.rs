@@ -1,10 +1,12 @@
+mod mcp;
+
 use crate::core::agent::AgentProfile;
 use crate::core::control::emitter::{Event, StatusEmitter};
 use crate::core::control::guard;
-use crate::core::ports::TransportConfig;
+use crate::core::ports::{RemoteTransport, TransportConfig};
 use crate::interface::cli::{Cli, Commands};
 use crate::platform::{health, runtime};
-use crate::transport::{self};
+use crate::transport::ssh_cli::SshCliTransport;
 use anyhow::Result;
 
 pub async fn run(cli: Cli) -> Result<i32> {
@@ -20,7 +22,6 @@ pub async fn run(cli: Cli) -> Result<i32> {
         Commands::Bind {
             target,
             agent,
-            transport,
             ssh_bin,
             extra_ssh_args,
             status_socket,
@@ -34,14 +35,13 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 ssh_reuse: false,
                 ssh_control_persist_secs: 0,
             };
-            let transport = transport::build_transport(transport, config, profile);
+            let transport = SshCliTransport::new(config, profile);
             handle_result(transport.bind_interactive().await, &mut emitter).await
         }
         Commands::Exec {
             target,
             cmd,
             agent,
-            transport,
             ssh_bin,
             clean,
             allow_high_risk,
@@ -63,8 +63,27 @@ pub async fn run(cli: Cli) -> Result<i32> {
                 ssh_reuse: !no_ssh_reuse,
                 ssh_control_persist_secs,
             };
-            let transport = transport::build_transport(transport, config, profile);
+            let transport = SshCliTransport::new(config, profile);
             handle_result(transport.exec_command(&cmd, clean).await, &mut emitter).await
+        }
+        Commands::McpServer {
+            target,
+            agent,
+            ssh_bin,
+            no_ssh_reuse,
+            ssh_control_persist_secs,
+            extra_ssh_args,
+        } => {
+            let profile = AgentProfile::new(agent);
+            let config = TransportConfig {
+                target,
+                ssh_bin,
+                extra_ssh_args,
+                ssh_reuse: !no_ssh_reuse,
+                ssh_control_persist_secs,
+            };
+            mcp::run_stdio_server(config, profile)?;
+            Ok(0)
         }
     }
 }

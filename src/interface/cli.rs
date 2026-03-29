@@ -1,5 +1,4 @@
 use crate::core::agent::AgentKind;
-use crate::transport::TransportKind;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -23,8 +22,6 @@ pub enum Commands {
         target: String,
         #[arg(long, value_enum, default_value = "generic")]
         agent: AgentKind,
-        #[arg(long, value_enum, default_value = "ssh-cli")]
-        transport: TransportKind,
         #[arg(long, default_value = "ssh")]
         ssh_bin: String,
         /// Extra raw args passed to ssh, e.g. --extra-ssh-args "-p" --extra-ssh-args "2222"
@@ -42,8 +39,6 @@ pub enum Commands {
         cmd: String,
         #[arg(long, value_enum, default_value = "generic")]
         agent: AgentKind,
-        #[arg(long, value_enum, default_value = "ssh-cli")]
-        transport: TransportKind,
         #[arg(long, default_value = "ssh")]
         ssh_bin: String,
         /// Enable semantic cleaning pipeline.
@@ -62,5 +57,20 @@ pub enum Commands {
         extra_ssh_args: Vec<String>,
         #[arg(long)]
         status_socket: Option<PathBuf>,
+    },
+    /// Run MCP stdio server so Agent UIs can execute commands remotely via tools.
+    McpServer {
+        #[arg(long)]
+        target: String,
+        #[arg(long, value_enum, default_value = "codex")]
+        agent: AgentKind,
+        #[arg(long, default_value = "ssh")]
+        ssh_bin: String,
+        #[arg(long, default_value_t = false)]
+        no_ssh_reuse: bool,
+        #[arg(long, default_value_t = 600)]
+        ssh_control_persist_secs: u32,
+        #[arg(long = "extra-ssh-args")]
+        extra_ssh_args: Vec<String>,
     },
 }

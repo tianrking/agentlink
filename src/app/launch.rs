@@ -60,6 +60,8 @@ pub fn launch_codex(cfg: CodexLaunchConfig) -> Result<i32> {
     let mut codex = Command::new("codex");
     if let Some(p) = &cfg.prompt {
         codex.arg(p);
+    } else {
+        codex.arg(default_remote_first_prompt());
     }
     if let Some(password) = &cfg.password {
         codex.env(&cfg.password_env, password);
@@ -84,6 +86,10 @@ pub fn launch_codex(cfg: CodexLaunchConfig) -> Result<i32> {
         .status();
 
     Ok(exit)
+}
+
+fn default_remote_first_prompt() -> &'static str {
+    "You are connected through AgentLink. For all command execution and file operations, use AgentLink MCP tools (remote_exec, remote_cd, remote_list_dir, remote_read_file, remote_write_file, remote_mkdir). Do not use local shell commands unless explicitly requested."
 }
 
 fn sanitize_name(input: &str) -> String {

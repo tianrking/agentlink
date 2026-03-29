@@ -73,3 +73,35 @@ impl AgentProfile {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{AgentKind, AgentProfile};
+
+    #[test]
+    fn codex_profile_enables_strict_cleaning() {
+        let profile = AgentProfile::new(AgentKind::Codex);
+        let cfg = profile.cleaner_config(true);
+        assert!(cfg.enabled);
+        assert!(cfg.strip_ansi);
+        assert!(cfg.drop_progress);
+        assert!(cfg.drop_motd);
+    }
+
+    #[test]
+    fn claudecode_profile_keeps_ansi_and_progress() {
+        let profile = AgentProfile::new(AgentKind::Claudecode);
+        let cfg = profile.cleaner_config(true);
+        assert!(cfg.enabled);
+        assert!(!cfg.strip_ansi);
+        assert!(!cfg.drop_progress);
+        assert!(!cfg.drop_motd);
+    }
+
+    #[test]
+    fn clean_disabled_returns_disabled_config() {
+        let profile = AgentProfile::new(AgentKind::Generic);
+        let cfg = profile.cleaner_config(false);
+        assert!(!cfg.enabled);
+    }
+}

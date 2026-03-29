@@ -18,3 +18,20 @@ impl MotdFilter {
         self.re.is_match(line)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::MotdFilter;
+
+    #[test]
+    fn drops_common_motd_line() {
+        let f = MotdFilter::new();
+        assert!(f.should_drop("Last login: Sun Mar 10 09:00:00"));
+    }
+
+    #[test]
+    fn keeps_regular_command_output() {
+        let f = MotdFilter::new();
+        assert!(!f.should_drop("src/main.rs"));
+    }
+}

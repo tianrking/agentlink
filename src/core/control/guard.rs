@@ -21,3 +21,23 @@ pub fn reject_if_high_risk(cmd: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::reject_if_high_risk;
+
+    #[test]
+    fn allows_safe_command() {
+        assert!(reject_if_high_risk("ls -la").is_ok());
+    }
+
+    #[test]
+    fn blocks_rm_rf() {
+        assert!(reject_if_high_risk("rm -rf /tmp/foo").is_err());
+    }
+
+    #[test]
+    fn blocks_drop_database() {
+        assert!(reject_if_high_risk("DROP DATABASE prod").is_err());
+    }
+}
